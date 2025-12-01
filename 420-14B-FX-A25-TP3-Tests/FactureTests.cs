@@ -48,7 +48,7 @@ namespace _420_14B_FX_A25_TP3_Tests
             var date = DateTime.Now;
 
             // Act
-            var facture = new Facture(1, date, 100m, 5m, 9.975m, 114.975m, billets);
+            var facture = new Facture(1, date, billets);
 
             // Assert
             Assert.Equal(1u, facture.Id);
