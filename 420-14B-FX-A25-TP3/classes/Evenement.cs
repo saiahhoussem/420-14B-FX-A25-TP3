@@ -52,7 +52,13 @@ namespace _420_14B_FX_A25_TP3.classes
         public TypeEvenement Type
         {
             get { return _type; }
-            set { _type = value; }
+            set
+            {
+                if (value < TypeEvenement.Musique || value > TypeEvenement.Autre)
+                    throw new ArgumentException("Le type d'événement spécifié est invalide.", nameof(value));
+
+                _type = value;
+            }
         }
 
         /// <summary>
