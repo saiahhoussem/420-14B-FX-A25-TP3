@@ -8,7 +8,9 @@ namespace _420_14B_FX_A25_TP3.classes
     /// </summary>
     public class Billet
     {
-        
+
+        private const int QUANTITE_MIN = 1;
+        private const int QUANTITE_MAX = 10;
 
         private uint _id;
         private Evenement _evenement;

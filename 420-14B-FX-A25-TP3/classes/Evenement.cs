@@ -77,7 +77,13 @@ namespace _420_14B_FX_A25_TP3.classes
         public decimal Prix
         {
             get { return _prix; }
-            set { _prix = value; }
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), "Le prix doit être supérieur ou égal à zéro.");
+
+                _prix = value;
+            }
         }
 
         /// <summary>
