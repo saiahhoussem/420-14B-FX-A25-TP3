@@ -8,6 +8,10 @@ namespace _420_14B_FX_A25_TP3.classes
     /// </summary>
     public class Evenement
     {
+
+        public const int NB_PLACES_MIN = 1;
+        public const int NB_PLACES_MAX = 500;
+
         private uint _id;
         private string _nom;
         private TypeEvenement _type;
@@ -93,7 +97,14 @@ namespace _420_14B_FX_A25_TP3.classes
         public int NbPlaces
         {
             get { return _nbPlaces; }
-            set { _nbPlaces = value; }
+            set
+            {
+                if (value < NB_PLACES_MIN || value > NB_PLACES_MAX)
+                    throw new ArgumentOutOfRangeException(nameof(value),
+                        $"Le nombre de places doit être entre {NB_PLACES_MIN} et {NB_PLACES_MAX}.");
+
+                _nbPlaces = value;
+            }
         }
 
         /// <summary>
