@@ -58,7 +58,7 @@ namespace _420_14B_FX_A25_TP3.classes
             get { return _type; }
             set
             {
-                if (value < TypeEvenement.Musique || value > TypeEvenement.Autre)
+                if (value < TypeEvenement.Musique || value > TypeEvenement.Conference)
                     throw new ArgumentException("Le type d'événement spécifié est invalide.", nameof(value));
 
                 _type = value;
