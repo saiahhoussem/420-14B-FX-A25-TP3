@@ -8,8 +8,6 @@ namespace _420_14B_FX_A25_TP3.classes
     /// </summary>
     public class Evenement
     {
-       
-
         private uint _id;
         private string _nom;
         private TypeEvenement _type;
@@ -35,7 +33,16 @@ namespace _420_14B_FX_A25_TP3.classes
         public string Nom
         {
             get { return _nom; }
-            set { _nom = value; }
+            set
+            {
+                if (value == null)
+                    throw new ArgumentNullException(nameof(value), "Le nom de l'événement ne peut pas être nul.");
+
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("Le nom de l'événement ne peut pas être vide ou ne contenir que des espaces.", nameof(value));
+
+                _nom = value.Trim();
+            }
         }
 
         /// <summary>
