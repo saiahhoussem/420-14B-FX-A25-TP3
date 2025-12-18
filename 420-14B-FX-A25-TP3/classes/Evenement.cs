@@ -1,4 +1,5 @@
 ﻿using _420_14B_FX_A25_TP3.enums;
+using System.IO;
 using System;
 
 namespace _420_14B_FX_A25_TP3.classes
@@ -39,7 +40,7 @@ namespace _420_14B_FX_A25_TP3.classes
             get { return _nom; }
             set
             {
-                if (value == null)
+                if (value is null)
                     throw new ArgumentNullException(nameof(value), "Le nom de l'événement ne peut pas être nul.");
 
                 if (string.IsNullOrWhiteSpace(value))
@@ -114,7 +115,18 @@ namespace _420_14B_FX_A25_TP3.classes
         public string ImagePath
         {
             get { return _imagePath; }
-            set { _imagePath = value; }
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("Le chemin de l'image ne peut pas être vide ou null.", nameof(value));
+
+                string extension = Path.GetExtension(value).ToLowerInvariant();
+
+                if (extension != ".jpg" && extension != ".jpeg" && extension != ".png")
+                    throw new ArgumentException("Seuls les formats .jpg, .jpeg et .png sont acceptés pour l'image.", nameof(value));
+
+                _imagePath = value;
+            }
         }
 
         /// <summary>
@@ -122,7 +134,13 @@ namespace _420_14B_FX_A25_TP3.classes
         /// </summary>
         public Evenement(uint id, string nom, TypeEvenement type, DateTime date, decimal prix, int nbPlaces, string imagePath)
         {
-            throw new NotImplementedException();
+            Id = id;              
+            Nom = nom;            
+            Type = type;          
+            DateHeure = date;     
+            Prix = prix;          
+            NbPlaces = nbPlaces;  
+            ImagePath = imagePath;
         }
 
         /// <summary>
@@ -130,7 +148,13 @@ namespace _420_14B_FX_A25_TP3.classes
         /// </summary>
         public Evenement(string nom, TypeEvenement type, DateTime date, decimal prix, int nbPlaces, string imagePath)
         {
-            throw new NotImplementedException();
+            Id = 0;
+            Nom = nom;
+            Type = type;
+            DateHeure = date;
+            Prix = prix;
+            NbPlaces = nbPlaces;
+            ImagePath = imagePath;
         }
     }
 }

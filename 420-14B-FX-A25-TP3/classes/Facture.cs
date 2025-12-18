@@ -8,11 +8,15 @@ namespace _420_14B_FX_A25_TP3.classes
     /// </summary>
     public class Facture
     {
-      
+
+        public const decimal TAUX_TPS = 0.05m;
+        public const decimal TAUX_TVQ = 0.09975m;
 
         private uint _id;
         private DateTime? _date;
         private List<Billet> _billets;
+
+        
 
         /// <summary>
         /// Identifiant unique de la facture.
@@ -32,7 +36,12 @@ namespace _420_14B_FX_A25_TP3.classes
         public DateTime? Date
         {
             get { return _date; }
-            set { _date = value; }
+            set
+            {
+                if (value.HasValue && value.Value > DateTime.Now)
+                    throw new ArgumentOutOfRangeException(nameof(value), "La date ne peut pas être dans le futur.");
+                _date = value;
+            }
         }
 
         /// <summary>
@@ -41,7 +50,7 @@ namespace _420_14B_FX_A25_TP3.classes
         public List<Billet> Billets
         {
             get { return _billets; }
-            private set { _billets = value ?? new List<Billet>(); }
+            //private set { _billets = value ?? new List<Billet>(); }
         }
 
         /// <summary>
@@ -49,7 +58,15 @@ namespace _420_14B_FX_A25_TP3.classes
         /// </summary>
         public decimal SousTotal
         {
-            get { throw new NotImplementedException(); }
+            get
+            {
+                decimal total = 0m;
+                foreach (Billet billet in _billets)
+                {
+                    total += billet.Evenement.Prix * billet.Quantite;
+                }
+                return total;
+            }
         }
 
         /// <summary>
@@ -57,7 +74,10 @@ namespace _420_14B_FX_A25_TP3.classes
         /// </summary>
         public decimal TPS
         {
-            get { throw new NotImplementedException(); }
+            get
+            {
+                return Math.Round(SousTotal * TAUX_TPS, 2);
+            }
         }
 
         /// <summary>
@@ -65,7 +85,10 @@ namespace _420_14B_FX_A25_TP3.classes
         /// </summary>
         public decimal TVQ
         {
-            get { throw new NotImplementedException(); }
+            get
+            {
+                return Math.Round(SousTotal * TAUX_TVQ, 2);
+            }
         }
 
         /// <summary>
@@ -73,7 +96,10 @@ namespace _420_14B_FX_A25_TP3.classes
         /// </summary>
         public decimal Total
         {
-            get { throw new NotImplementedException(); }
+            get
+            {
+                return SousTotal + TPS + TVQ;
+            }
         }
 
         /// <summary>
@@ -81,22 +107,19 @@ namespace _420_14B_FX_A25_TP3.classes
         /// </summary>
         public Facture()
         {
-            throw new NotImplementedException();
+            Id = 0;
+            Date = DateTime.Now;
+            _billets = new List<Billet>();
         }
 
         /// <summary>
         /// Initialise une facture complète avec ses données.
         /// </summary>
-        /// <param name="id">Identifiant de la facture.</param>
-        /// <param name="date">Date de création de la facture.</param>
-        /// <param name="sousTotal">Montant avant taxes.</param>
-        /// <param name="tps">Montant de la TPS.</param>
-        /// <param name="tvq">Montant de la TVQ.</param>
-        /// <param name="total">Montant total avec taxes.</param>
-        /// <param name="billets">Liste des billets inclus dans la facture.</param>
-        public Facture(uint id, DateTime date, decimal sousTotal, decimal tps, decimal tvq, decimal total, List<Billet> billets)
+        public Facture(uint id, DateTime date, List<Billet> billets)
         {
-            throw new NotImplementedException();
+            Id = id;
+            Date = date;
+            _billets = billets ?? new List<Billet>();
         }
 
         /// <summary>
@@ -113,7 +136,30 @@ namespace _420_14B_FX_A25_TP3.classes
         /// </exception>
         public void AjouterBillet(Billet billet)
         {
-            throw new NotImplementedException();
+            if (billet is null)
+                throw new ArgumentNullException(nameof(billet));
+
+            Billet billetExistant = null;
+
+            for (int i = 0; i < Billets.Count; i++)
+            {
+                if (Billets[i] == billet)  
+                {
+                    if (Billets[i].Quantite + billet.Quantite > Billet.QUANTITE_MAX)
+                        throw new InvalidOperationException("La quantité maximale pour cet événement est atteinte.");
+
+                    Billets[i].Quantite += billet.Quantite;
+                    billetExistant = Billets[i];  
+                }
+            }
+
+            if (billetExistant is null)  
+            {
+                if (billet.Quantite > Billet.QUANTITE_MAX)
+                    throw new InvalidOperationException("La quantité maximale pour cet événement est atteinte.");
+
+                Billets.Add(billet);
+            }
         }
 
         /// <summary>
@@ -130,7 +176,31 @@ namespace _420_14B_FX_A25_TP3.classes
         /// </exception>
         public void SupprimerBillet(Billet billet)
         {
-            throw new NotImplementedException();
+            Billet billetExistant = null;
+            if (billet is null)
+                throw new ArgumentNullException(nameof(billet));   
+
+            foreach (Billet b in _billets)
+            {
+                if (b == billet)
+                {
+                    billetExistant = b;
+                    break;
+                }
+            }
+
+            if (billetExistant == null)
+                throw new InvalidOperationException("Le billet n'existe pas dans la facture.");
+
+            if (billetExistant.Quantite > 1)
+            {
+                billetExistant.Quantite -= 1;
+            }
+            else
+            {
+                // Quantite == 1 → on retire complètement le billet
+                _billets.Remove(billetExistant);
+            }
         }
     }
 }

@@ -9,8 +9,8 @@ namespace _420_14B_FX_A25_TP3.classes
     public class Billet
     {
 
-        private const int QUANTITE_MIN = 1;
-        private const int QUANTITE_MAX = 10;
+        public const int QUANTITE_MIN = 1;
+        public const int QUANTITE_MAX = 10;
 
         private uint _id;
         private Evenement _evenement;
@@ -31,7 +31,12 @@ namespace _420_14B_FX_A25_TP3.classes
         public Evenement Evenement
         {
             get { return _evenement; }
-            set { _evenement = value; }
+            set
+            {
+                if (value is null)
+                    throw new ArgumentNullException(nameof(value), "L'événement ne peut pas être null.");
+                _evenement = value;
+            }
         }
 
         /// <summary>
@@ -40,7 +45,12 @@ namespace _420_14B_FX_A25_TP3.classes
         public int Quantite
         {
             get { return _quantite; }
-            set { _quantite = value; }
+            set
+            {
+                if (value < QUANTITE_MIN || value > QUANTITE_MAX)
+                    throw new ArgumentOutOfRangeException(nameof(value), $"La quantité doit être entre {QUANTITE_MIN} et {QUANTITE_MAX}.");
+                _quantite = value;
+            }
         }
 
         /// <summary>
@@ -48,7 +58,9 @@ namespace _420_14B_FX_A25_TP3.classes
         /// </summary>
         public Billet(uint id, Evenement evenement, int quantite = QUANTITE_MIN)
         {
-            throw new NotImplementedException();
+            Id = id;
+            Evenement = evenement;
+            Quantite = quantite;
         }
 
         /// <summary>
@@ -56,7 +68,9 @@ namespace _420_14B_FX_A25_TP3.classes
         /// </summary>
         public Billet(Evenement evenement)
         {
-            throw new NotImplementedException();
+            Id = 0;                    
+            Evenement = evenement;     
+            Quantite = QUANTITE_MIN;
         }
 
         /// <summary>
@@ -64,17 +78,21 @@ namespace _420_14B_FX_A25_TP3.classes
         /// </summary>
         public override bool Equals(object obj)
         {
-            throw new NotImplementedException();
+            if (obj is Billet other)
+                return Evenement.Id == other.Evenement.Id;
+            return false;
         }
 
         public static bool operator ==(Billet gauche, Billet droite)
         {
-            throw new NotImplementedException();
+            if (gauche is null) 
+                return droite is null;
+            return gauche.Equals(droite);
         }
 
         public static bool operator !=(Billet gauche, Billet droite)
         {
-            throw new NotImplementedException();
+            return !(gauche == droite);
         }
     }
 }

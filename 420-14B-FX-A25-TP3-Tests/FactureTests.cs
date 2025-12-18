@@ -87,8 +87,8 @@ namespace _420_14B_FX_A25_TP3_Tests
         {
             // Arrange
             var facture = CreerFactureValide();
-            facture.Billets.Add(new Billet(1,CreerEvenementValide(1, 20m), 2 )); 
-            facture.Billets.Add(new Billet(2,CreerEvenementValide(2, 30m), 1 )); 
+            facture.Billets.Add(new Billet(1, CreerEvenementValide(1, 20m), 2));
+            facture.Billets.Add(new Billet(2, CreerEvenementValide(2, 30m), 1));
 
             // Act
             var sousTotal = facture.SousTotal;
@@ -102,7 +102,7 @@ namespace _420_14B_FX_A25_TP3_Tests
         {
             // Arrange
             var facture = CreerFactureValide();
-            facture.Billets.Add(new Billet(CreerEvenementValide(1, 100m))); 
+            facture.Billets.Add(new Billet(CreerEvenementValide(1, 100m)));
 
             // Act
             var tps = facture.TPS;
