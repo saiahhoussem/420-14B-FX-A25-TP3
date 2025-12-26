@@ -15,7 +15,6 @@ namespace _420_14B_FX_A25_TP3.dal
     {
         private const string APPSETTINGS_FILE = "appsettings.json";
         private const string CONNECTION_STRING = "DefaultConnection";
-        /// Question à poser au prof.
         private const string IMAGE_PATH = "Images:Path";
 
         private static readonly IConfiguration _config = new ConfigurationBuilder()
@@ -46,10 +45,179 @@ namespace _420_14B_FX_A25_TP3.dal
         }
 
         /// <summary>
-        /// Récupère la liste complète des événements depuis la base de données.
+        /// Retourne le chemin du répertoire contenant les images des événements.
         /// </summary>
-        /// <returns>Liste d'objets Evenement.</returns>
-        public static List<Evenement>  ObtenirListeEvenements(string nom = "", TypeEvenement? type = null)
+        /// <returns>Chemin du dossier en chaîne de caractères.</returns>
+        private static string CheminImages()
+        {
+            string imagesPath = _config[IMAGE_PATH];
+            if (string.IsNullOrWhiteSpace(imagesPath))
+            {
+                imagesPath = "images";
+            }
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, imagesPath);
+        }
+
+        /// <summary>
+        /// Ajoute un nouvel événement à la base de données.
+        /// </summary>
+        /// <param name="e">Evenement</param>
+        public static void AjouterEvenement(Evenement e)
+        {
+            if (e is null)
+            {
+                throw new ArgumentNullException(nameof(e), "L'événement ne doit pas être null.");
+            }
+
+
+            MySqlConnection cn = null;
+            string imageCopiee = null;
+            try
+            {
+                cn = CreerConnection();
+                cn.Open();
+
+                string nouveauNomImage = null;
+                if (!string.IsNullOrEmpty(e.ImagePath) && File.Exists(e.ImagePath))
+                {
+                    string dossierImages = CheminImages();
+
+                    if (!Directory.Exists(dossierImages))
+                    {
+                        Directory.CreateDirectory(dossierImages);
+                    }
+
+                    string extension = Path.GetExtension(e.ImagePath);
+                    nouveauNomImage = $"{Guid.NewGuid()}{extension}";
+                    string cheminDestination = Path.Combine(dossierImages, nouveauNomImage);
+
+                    File.Copy(e.ImagePath, cheminDestination, true);
+                    imageCopiee = cheminDestination;
+                }
+
+                string requete = "INSERT INTO Evenements (nom, type, dateHeure, prix, nbPlaces, imagePath)"+
+                                 " VALUES (@nom, @type, @dateHeure, @prix, @nbPlaces, @imagePath);";
+
+                MySqlCommand cmd = new MySqlCommand(requete, cn);
+                cmd.Parameters.AddWithValue("@nom", e.Nom);
+                cmd.Parameters.AddWithValue("@type", (int)e.Type);
+                cmd.Parameters.AddWithValue("@dateHeure", e.DateHeure);
+                cmd.Parameters.AddWithValue("@prix", e.Prix);
+                cmd.Parameters.AddWithValue("@nbPlaces", e.NbPlaces);
+
+                if (nouveauNomImage != null)
+                {
+                    cmd.Parameters.AddWithValue("@imagePath", nouveauNomImage);
+                }
+                else
+                {
+                    cmd.Parameters.AddWithValue("@imagePath", DBNull.Value);
+                }
+
+      
+                cmd.ExecuteNonQuery();
+
+         
+                e.Id = Convert.ToUInt32(cmd.LastInsertedId);
+
+                if (nouveauNomImage != null)
+                {
+                    e.ImagePath = nouveauNomImage;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (imageCopiee != null && File.Exists(imageCopiee))
+                {
+                    File.Delete(imageCopiee);
+                }
+
+                throw new Exception("Erreur lors de l'ajout de l'événement", ex);
+            }
+            finally
+            {
+                FermerConnection(cn);
+            }
+        }
+
+        /// <summary>
+        /// Recherche et retourne une facture à partir de son identifiant unique.
+        /// </summary>
+        /// <param name="idFacture">Identifiant de la facture</param>
+        /// <returns>Facture</returns>
+        public static Facture ObtenirFacture(uint idFacture)
+        {
+            MySqlConnection cn = null;
+            MySqlDataReader dr = null;
+
+            try
+            {
+                cn = CreerConnection();
+                cn.Open();
+
+                string requete = @"SELECT Id, `Date` as DateCreation FROM Factures WHERE Id = @idFacture";
+
+                MySqlCommand cmd = new MySqlCommand(requete, cn);
+                cmd.Parameters.AddWithValue("@idFacture", idFacture);
+
+                dr = cmd.ExecuteReader(); 
+
+                dr.Read();
+                uint factureId = dr.GetUInt32(0);
+                DateTime factureDate = dr.GetDateTime(1);
+                dr.Close(); 
+
+                Facture facture = new Facture(factureId, factureDate, new List<Billet>());
+
+                
+                requete = "SELECT b.Id, b.Quantite, e.Id,e.Nom, e.Type, e.DateHeure, e.Prix, e.NbPlaces, e.ImagePath " 
+                        + "FROM Billets b INNER JOIN Evenements e ON b.IdEvenement = e.Id "
+                        + "WHERE b.IdFacture = @idFacture ORDER BY e.Nom";
+
+                cmd.CommandText = requete;
+                cmd.Parameters.Clear();
+                cmd.Parameters.AddWithValue("@idFacture", idFacture);
+
+                dr = cmd.ExecuteReader(); 
+
+                while (dr.Read())
+                {
+                   
+                    Evenement evenement = new Evenement(
+                        dr.GetUInt32(2),                   
+                        dr.GetString(3),                   
+                        (TypeEvenement)dr.GetInt32(4),     
+                        dr.GetDateTime(5),                 
+                        dr.GetDecimal(6),                  
+                        dr.GetInt32(7),
+                        dr.GetString(8)                       
+                    );
+
+                    Billet billet = new Billet(
+                        dr.GetUInt32(0),                   
+                        evenement,
+                        dr.GetInt32(1)                     
+                    );
+
+                    facture.AjouterBillet(billet);
+                }
+                dr.Close(); 
+
+                return facture;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Erreur lors de la récupération de la facture ID {idFacture}", ex);
+            }
+            finally
+            {
+                dr.Close();
+                FermerConnection(cn);
+            }
+        }
+
+
+        public static List<Evenement> ObtenirListeEvenements(string nom = "", TypeEvenement? type = null)
         {
             List<Evenement> evenements = new List<Evenement>();
             MySqlConnection cn = null;
@@ -114,52 +282,34 @@ namespace _420_14B_FX_A25_TP3.dal
             return evenements;
         }
 
-        /// <summary>
-        /// Vérifie si un événement ayant le même nom et la même date existe déjà.
-        /// </summary>
-        /// <param name="e"></param>
-        /// <param name="idIgnore"></param>
-        /// <returns>Valeur booléenne</returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="Exception"></exception>
+      
         public static bool EvenementExiste(Evenement e)
         {
             if (e == null)
-                throw new ArgumentNullException(nameof(e));
+            {
+                throw new ArgumentNullException(nameof(e), "L'événement ne doit pas être null.");
+            }
 
-            uint? idIgnore = null;
             MySqlConnection cn = null;
             try
             {
                 cn = CreerConnection();
                 cn.Open();
 
-                string requete = @"SELECT COUNT(*) 
-                                   FROM Evenements 
-                                   WHERE nom = @nom 
-                                   AND dateHeure = @dateHeure";
-
-                if (idIgnore.HasValue)
-                {
-                    requete += " AND id != @idIgnore";
-                }
+                string requete = "SELECT COUNT(*) FROM Evenements" + 
+                                 " WHERE Nom = @nom DateHeure = @dateHeure";
 
                 MySqlCommand cmd = new MySqlCommand(requete, cn);
                 cmd.Parameters.AddWithValue("@nom", e.Nom);
                 cmd.Parameters.AddWithValue("@dateHeure", e.DateHeure);
 
-                if (idIgnore.HasValue)
-                {
-                    cmd.Parameters.AddWithValue("@idIgnore", idIgnore.Value);
-                }
-
-                int compteur = (int)cmd.ExecuteScalar();
+                long compteur = Convert.ToInt64(cmd.ExecuteScalar());
 
                 return compteur > 0;
             }
             catch (Exception ex)
             {
-                throw new Exception("Erreur lors de la vérification de l'existence de l'événement", ex);
+                throw new Exception("Erreur lors de la vérification de l'existence de l'événement.", ex);
             }
             finally
             {
@@ -167,14 +317,7 @@ namespace _420_14B_FX_A25_TP3.dal
             }
         }
 
-        /// <summary>
-        /// Vérifie si un autre événement est prévu à la même date.
-        /// </summary>
-        /// <param name="e"></param>
-        /// <param name="idIgnore"></param>
-        /// <returns>Valeur booléenne</returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="Exception"></exception>
+     
         public static bool EvenementEnConflit(Evenement e, uint? idIgnore = null)
         {
             if (e == null)
@@ -217,14 +360,7 @@ namespace _420_14B_FX_A25_TP3.dal
             }
         }
 
-        /// <summary>
-        /// Supprime un événement si aucun billet ne lui est associé. Supprime également l’image correspondante.
-        /// </summary>
-        /// <param name="e"></param>
-        /// <returns>Valeur booléenne</returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="Exception"></exception>
+        
         public static bool SupprimerEvenement(Evenement e)
         {
             if (e is null)
@@ -298,15 +434,6 @@ namespace _420_14B_FX_A25_TP3.dal
         }
 
 
-
-
-        /// <summary>
-        /// Met à jour les informations d’un événement existant. Remplace l’image si une nouvelle est fournie.
-        /// </summary>
-        /// <param name="e"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="Exception"></exception>
         public static void ModifierEvenement(Evenement e)
         {
             if (e is null)
@@ -326,7 +453,7 @@ namespace _420_14B_FX_A25_TP3.dal
                 cmd.Parameters.AddWithValue("@id", e.Id);
                 string ancienNomImage = cmd.ExecuteScalar() as string;
 
-                string dossierImages = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images");
+                string dossierImages = CheminImages();
 
                 string nouveauNomImage = ancienNomImage;
 
@@ -402,13 +529,7 @@ namespace _420_14B_FX_A25_TP3.dal
         }
 
 
-        /// <summary>
-        ///  Insère une facture et ses billets dans la base. Met à jour l’identifiant(Id) de la facture.
-        /// </summary>
-        /// <param name="f"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        /// <exception cref="Exception"></exception>
+        
         public static void AjouterFacture(Facture f)
         {
             if (f is null)
@@ -470,8 +591,6 @@ namespace _420_14B_FX_A25_TP3.dal
             }
         }
 
-
-
-
+      
     }
 }

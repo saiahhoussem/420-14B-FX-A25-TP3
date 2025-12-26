@@ -30,20 +30,93 @@ namespace _420_14B_FX_A25_TP3
 
         }
 
-
-
-        //A ne pas faire!
+        /// <summary>
+        /// Ouvre un formulaire pour ajouter un nouvel événement.
+        /// </summary>
         private void btnAjouterEvenement_Click(object sender, RoutedEventArgs e)
         {
-
+            try
+            {
+                FormEvenement formEvenement = new FormEvenement(EtatFormulaire.Ajouter);
+                if (formEvenement.ShowDialog() == true)
+                {
+                    Evenement nouveauEvenement = formEvenement.Evenement;
+                    BilleterieDAL.AjouterEvenement(nouveauEvenement);
+                    ChargerEvenements();
+                }
+            }
+            catch(Exception ex)
+            {
+                throw new ArgumentException("Une erreur s'est produite lors de l'ajout de l'événement.");
+            }
         }
 
-
         /// <summary>
-        /// Modifier un evenement
+        /// Lance la recherche d'une facture à partir de son identifiant unique.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        private void btnRechercheFacture_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                uint idFacture;
+                bool saisieValide = uint.TryParse(txtNoFacture.Text, out idFacture) && idFacture > 0;
+                btnPayer.IsEnabled = false;
+
+                if (saisieValide)
+                {
+                    Facture facture = BilleterieDAL.ObtenirFacture(idFacture);
+
+                    if (facture != null)
+                    {
+                        lblDateFacture.Text = $"Date : {facture.Date:yyyy/MM/dd HH:mm}";
+
+                        lvFacture.ItemsSource = facture.Billets;
+
+
+                        lblSousTotal.Text = $"{facture.SousTotal:C2}";
+                        lblTotal.Text = $"{facture.Total:C2}";
+                        lblTPS.Text = $"{facture.TPS:C2}";
+                        lblTVQ.Text = $"{facture.TVQ:C2}";
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Aucune facture trouvée avec le numéro {idFacture}.",
+                                      "Facture introuvable",
+                                      MessageBoxButton.OK,
+                                      MessageBoxImage.Information);
+
+                        lblDateFacture.Text = "";
+                        lvFacture.ItemsSource = null;
+                        lblSousTotal.Text = $"";
+                        lblTotal.Text = $"";
+                        lblTPS.Text = $"";
+                        lblTVQ.Text = $"";
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Veuillez entrer un numéro de facture valide (nombre positif).",
+                                  "Numéro invalide",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Warning);
+
+                    lblDateFacture.Text = "";
+                    lvFacture.ItemsSource = null;
+                    lblSousTotal.Text = $"";
+                    lblTotal.Text = $"";
+                    lblTPS.Text = $"";
+                    lblTVQ.Text = $"";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur lors de la recherche de la facture : {ex.Message}",
+                              "Erreur",
+                              MessageBoxButton.OK,
+                              MessageBoxImage.Error);
+            }
+        }
+
         private void btnModifierEvenement_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -58,12 +131,8 @@ namespace _420_14B_FX_A25_TP3
                     if (formEvenement.ShowDialog() == true)
                     {
                         Evenement evenementModifie = formEvenement.Evenement;
-
                         BilleterieDAL.ModifierEvenement(evenementModifie);
                         ChargerEvenements();
-
-                        MessageBox.Show("Événement modifié avec succès", "Succès",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
                     }
 
                 }
@@ -79,11 +148,7 @@ namespace _420_14B_FX_A25_TP3
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        /// <summary>
-        /// Supprimer un evenement
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+       
         private void btnSupprimerEvenement_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -138,34 +203,18 @@ namespace _420_14B_FX_A25_TP3
 
 
 
-       
-
-        //A ne pas faire
         private void btnRechercheEvenement_Click(object sender, RoutedEventArgs e)
-        {
-         
+        {  
 
         }
-
-
-        
         private void btnNouvelleFacture_Click(object sender, RoutedEventArgs e)
         {
-          
-
-          
 
         }
         
         private void btnPayer_Click(object sender, RoutedEventArgs e)
         {
           
-
-        }
-
-        private void btnRechercheFacture_Click(object sender, RoutedEventArgs e)
-        {
-            
         }
 
         private void ChargerTypeEvenement()
@@ -281,16 +330,16 @@ namespace _420_14B_FX_A25_TP3
                 {
                     Content = new Image
                     {
-                        Source = new BitmapImage(new Uri("C:\\Users\\pc\\Desktop\\HOUSSEM-SAIAH\\TP3_C#\\420-14B-FX-A25-TP3\\420-14B-FX-A25-TP3\\Resources\\edit.png")),
+                        Source = new BitmapImage(new Uri("/Resources/edit.png",UriKind.Relative)),
                         Width = 25,
                         Height = 25
                     },
                     Background = Brushes.Transparent,
                     BorderThickness = new Thickness(0),
-                    Margin = new Thickness(10, 0, 20, 0),   
-                    Cursor = Cursors.Hand,  
+                    Margin = new Thickness(10, 0, 20, 0),
+                    Cursor = Cursors.Hand,
                     ToolTip = "Modifier cet événement",
-                    Tag = e  
+                    Tag = e
                 };
 
                 iconModifier.Click += btnModifierEvenement_Click;
@@ -300,7 +349,7 @@ namespace _420_14B_FX_A25_TP3
                 Button iconSupprimer = new Button
                 {
                     Content = new Image{
-                        Source = new BitmapImage(new Uri("C:\\Users\\pc\\Desktop\\HOUSSEM-SAIAH\\TP3_C#\\420-14B-FX-A25-TP3\\420-14B-FX-A25-TP3\\Resources\\delete.png")),
+                        Source = new BitmapImage(new Uri("/Resources/delete.png", UriKind.Relative)),
                         Width = 25,
                         Height = 25
                     },

@@ -198,7 +198,6 @@ namespace _420_14B_FX_A25_TP3.classes
             }
             else
             {
-                // Quantite == 1 → on retire complètement le billet
                 _billets.Remove(billetExistant);
             }
         }

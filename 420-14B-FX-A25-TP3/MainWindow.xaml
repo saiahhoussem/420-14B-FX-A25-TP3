@@ -71,6 +71,12 @@
                                     <ListView x:Name="lvFacture" HorizontalContentAlignment="Stretch">
                                         <ListView.ItemTemplate>
                                             <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" Margin="5">
+                                                    <TextBlock Text="{Binding Evenement.Nom}" Margin="5"/>
+                                                    <Image x:Name="icnSoustraireBillet" Source="/Resources/minus.png" Width="16" Height="16" Margin="30,0,15,0"/>
+                                                    <TextBox Text="{Binding Quantite}" Height="25" Width="25"/>
+                                                    <Image x:Name="icnAjouterBillet" Source="/Resources/plus.png" Width="16" Height="16" Margin="15,0,15,0"/>
+                                                </StackPanel>
                                             </DataTemplate>
                                         </ListView.ItemTemplate>
                                     </ListView>
@@ -106,7 +112,7 @@
                                 <Image Source="/Resources/new.png" Width="25" Margin="5"/>
                             </Button>
                             <Button x:Name="btnPayer" Content="Payer" Background="#4169e1" Foreground="White"
-                                    Width="80" Margin="5" Click="btnPayer_Click"/>
+                                    Width="80" Margin="5" Click="btnPayer_Click" IsEnabled="True"/>
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>

@@ -49,10 +49,16 @@ namespace _420_14B_FX_A25_TP3
                     PreRemplirChamps();
                     DesactiverChamps();
                     break;
+
+                case EtatFormulaire.Ajouter:
+                    this.Title = "Ajouter un événement";
+                    btnAction.Content = "Ajouter";
+                    InitialiserChampsVides();
+                    ChargerTypeEvenement();
+                    break;
             }
         }
-
-        //A ne pas utiliser non plus! (Pas d'ajout)
+ 
         private void InitialiserChampsVides()
         {   
             txtNom.Clear();
@@ -62,6 +68,7 @@ namespace _420_14B_FX_A25_TP3
             txtNbPlaces.Clear();
             txtImage.Clear();
             imgApercu.Source = null;
+            btnParcourir.IsEnabled = true;
         }
 
         private void DesactiverChamps()
@@ -103,10 +110,98 @@ namespace _420_14B_FX_A25_TP3
             InitialiserFormulaire();
         }
 
+        public bool ValiderEvenement()
+        {
+            string messageErreur = "";
+            if (string.IsNullOrWhiteSpace(txtNom.Text))
+            {
+                messageErreur += "- Vous devez saisir le nom de l'événement.\n";
+            }
+
+            if (cboType.SelectedIndex == -1)
+            {
+                messageErreur += "- Vous devez choisir le type de l'événement.\n";
+            }
+
+            if (!dpDate.SelectedDate.HasValue || tpHeure.Value == null)
+            {
+                messageErreur += "-Vous devez choisir la date et l'heure de l'événement.";     
+            }
+
+            int nbPlaces;
+            if (!int.TryParse(txtNbPlaces.Text, out nbPlaces) || nbPlaces < Evenement.NB_PLACES_MIN && nbPlaces > Evenement.NB_PLACES_MAX)
+            {
+                messageErreur += $"-NbPlaces doit être entre {Evenement.NB_PLACES_MIN} et {Evenement.NB_PLACES_MAX}.";
+            }
+
+            decimal prix;
+            if (!decimal.TryParse(txtPrix.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out prix) || prix < 0)
+            {
+                messageErreur += "-Prix invalide.";
+            }
+
+            if (messageErreur != "")
+            {
+                MessageBox.Show(messageErreur, "Enregistrement");
+                return false;
+            }
+
+            return true;
+        }
        
         private void btnAction_Click(object sender, RoutedEventArgs e)
         {
-            if(_etat == EtatFormulaire.Supprimer)
+            if(_etat == EtatFormulaire.Ajouter)
+            {
+                if (ValiderEvenement())
+                {
+
+                    _evenement = new Evenement(
+                                               txtNom.Text.Trim(),
+                                               (TypeEvenement)Enum.Parse(typeof(TypeEvenement), 
+                                               cboType.SelectedItem.ToString()),
+                                               dpDate.SelectedDate.Value.Date + tpHeure.Value.Value.TimeOfDay,
+                                               decimal.Parse(txtPrix.Text),
+                                               int.Parse(txtNbPlaces.Text),
+                                               txtImage.Text.Trim()
+                                               );
+
+                    MessageBox.Show("Événement ajouté avec succès !", "Confirmation d'enregistrement");
+
+                    DialogResult = true;
+                    Close();
+                }
+
+            }
+            else if (_etat == EtatFormulaire.Modifier)
+            {
+                if (ValiderEvenement())
+                {
+                    if (_evenement != null)
+                    {
+                        _evenement.Nom = txtNom.Text.Trim();
+                        _evenement.Type = (TypeEvenement)Enum.Parse(typeof(TypeEvenement), cboType.SelectedItem.ToString());
+                        _evenement.DateHeure = dpDate.SelectedDate.Value.Date + tpHeure.Value.Value.TimeOfDay;
+                        _evenement.Prix = decimal.Parse(txtPrix.Text, CultureInfo.CurrentCulture);
+                        _evenement.NbPlaces = int.Parse(txtNbPlaces.Text);
+                        _evenement.ImagePath = txtImage.Text.Trim();
+
+                        try
+                        {
+                            BilleterieDAL.ModifierEvenement(_evenement);
+                            MessageBox.Show("Événement modifié avec succès !", "Confirmation d'enregistrement");
+                            DialogResult = true;
+                            Close();
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Erreur lors de la modification: {ex.Message}", "Erreur",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                }
+            }
+            else 
             {
                 MessageBoxResult result = MessageBox.Show(
                 "Êtes-vous sûr de vouloir supprimer cet évenement ?",
@@ -119,55 +214,8 @@ namespace _420_14B_FX_A25_TP3
                     DialogResult = true;
                 }
             }
-            else if (_etat == EtatFormulaire.Modifier)
-            {
-                if (_evenement == null)
-                {
-                    MessageBox.Show("Aucun événement à modifier.", "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(txtNom.Text))
-                {
-                    MessageBox.Show("Le nom est obligatoire.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-                if (cboType.SelectedItem == null)
-                {
-                    MessageBox.Show("Le type est obligatoire.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-                if (!dpDate.SelectedDate.HasValue || tpHeure.Value == null)
-                {
-                    MessageBox.Show("La date et l'heure sont obligatoires.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                if (!int.TryParse(txtNbPlaces.Text, out int nbPlaces) || nbPlaces <= 0)
-                {
-                    MessageBox.Show("NbPlaces invalide.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                if (!decimal.TryParse(txtPrix.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out decimal prix) || prix < 0)
-                {
-                    MessageBox.Show("Prix invalide.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                _evenement.Nom = txtNom.Text.Trim();
-                _evenement.Type = (TypeEvenement)Enum.Parse(typeof(TypeEvenement), cboType.SelectedItem.ToString());
-                _evenement.DateHeure = dpDate.SelectedDate.Value.Date + tpHeure.Value.Value.TimeOfDay;
-                _evenement.NbPlaces = nbPlaces;
-                _evenement.Prix = prix;
-                _evenement.ImagePath = txtImage.Text.Trim();
-
-                DialogResult = true;
-            }
 
         }
-
-
 
         private void btnParcourir_Click(object sender, RoutedEventArgs e)
         {
@@ -188,8 +236,6 @@ namespace _420_14B_FX_A25_TP3
                 MessageBox.Show("Une erreur s'est produite :\n" + ex.Message, "Ajout d'une image");
             }
         }
-
-        
 
         private void btnAnnuler_Click(object sender, RoutedEventArgs e)
         {

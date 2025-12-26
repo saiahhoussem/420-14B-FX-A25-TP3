@@ -120,7 +120,7 @@ namespace _420_14B_FX_A25_TP3.classes
                 if (string.IsNullOrWhiteSpace(value))
                     throw new ArgumentException("Le chemin de l'image ne peut pas être vide ou null.", nameof(value));
 
-                string extension = Path.GetExtension(value).ToLowerInvariant();
+                string extension = Path.GetExtension(value).ToLower();
 
                 if (extension != ".jpg" && extension != ".jpeg" && extension != ".png")
                     throw new ArgumentException("Seuls les formats .jpg, .jpeg et .png sont acceptés pour l'image.", nameof(value));
